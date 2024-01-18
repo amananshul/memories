@@ -1,14 +1,11 @@
-// Step2Form.tsx
 import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
 import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
+import Autocomplete from '@mui/material/Autocomplete';
 import Button from '@mui/material/Button';
 import { Box, Grid } from '@material-ui/core';
-import { submitStep2 } from './Redux/reducer/formSlice';
 
 export interface Step2FormValues {
   address: string;
@@ -18,10 +15,8 @@ export interface Step2FormValues {
   pincode: string;
 }
 
-const Step2Form: React.FC<{ onSubmit:any }> = ({ onSubmit }) => {
+const Step2Form: React.FC<{ onSubmit: any }> = ({ onSubmit }) => {
   const [countries, setCountries] = useState<string[]>([]);
-  const dispatch = useDispatch();
-
   const formik = useFormik({
     initialValues: {
       address: '',
@@ -37,26 +32,19 @@ const Step2Form: React.FC<{ onSubmit:any }> = ({ onSubmit }) => {
       country: Yup.string().required('Country is required'),
       pincode: Yup.string().matches(/^[0-9]*$/, 'Pincode must be numeric'),
     }),
-    onSubmit: (values: Step2FormValues) => {
-      dispatch(submitStep2(values)); // Dispatch the action to save step-2 form data
-      onSubmit();
-    },
+    onSubmit: onSubmit,
   });
 
-  // Fetch countries from the API
-  useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        const response = await axios.get('https://restcountries.com/v3.1/all');
-        const countryNames = response.data.map((country: any) => country.name.common);
-        setCountries(countryNames);
-      } catch (error) {
-        console.error('Error fetching countries:', error);
-      }
-    };
-
-    fetchCountries();
-  }, []); // Fetch countries only once when the component mounts
+  // Fetch countries from the API as the user types
+  const fetchCountries = async (searchTerm: string) => {
+    try {
+      const response = await axios.get(`https://restcountries.com/v3.1/name/${searchTerm}`);
+      const countryNames = response.data.map((country: any) => country.name.common);
+      setCountries(countryNames);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
 
   return (
     <form onSubmit={formik.handleSubmit}>
@@ -101,23 +89,23 @@ const Step2Form: React.FC<{ onSubmit:any }> = ({ onSubmit }) => {
             />
           </Grid>
           <Grid item xs={12} md={4}>
-            <TextField
+            <Autocomplete
               id="country"
-              label="Country"
-              select
-              variant="outlined"
+              options={countries}
               fullWidth
-              {...formik.getFieldProps('country')}
-              error={formik.touched.country && Boolean(formik.errors.country)}
-              helperText={formik.touched.country && formik.errors.country}
-            >
-              <MenuItem value="">Select</MenuItem>
-              {countries.map((country) => (
-                <MenuItem key={country} value={country}>
-                  {country}
-                </MenuItem>
-              ))}
-            </TextField>
+              freeSolo
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Country"
+                  variant="outlined"
+                  {...formik.getFieldProps('country')}
+                  error={formik.touched.country && Boolean(formik.errors.country)}
+                  helperText={formik.touched.country && formik.errors.country}
+                />
+              )}
+              onInputChange={(event, value) => fetchCountries(value)}
+            />
           </Grid>
           <Grid item xs={12} md={4}>
             <TextField

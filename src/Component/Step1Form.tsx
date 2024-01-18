@@ -50,21 +50,17 @@ const Step1Form: React.FC<Step1FormProps> = ({ onNext }) => {
           .required('Aadhar number is required')
       }),
     }),
-    onSubmit: (values: Step1FormValues) => {
-      onNext(values);
-      navigate('/step-2');
-    },
+    onSubmit:onNext
   });
 
-  const handleNextClick = async () => {
-    try {
-      await formik.validateForm();
-      formik.submitForm(); // Use submitForm instead of handleSubmit
-    } catch (errors) {
-      // Handle validation errors (errors object contains validation messages)
+  const handleNextClick = () => {
+    formik.validateForm().then(() => {
+      formik.submitForm();
+    }).catch(errors => {
       console.error('Validation errors:', errors);
-    }
+    });
   };
+  
 
   return (
     <form onSubmit={formik.handleSubmit}>
